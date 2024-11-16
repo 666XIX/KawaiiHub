@@ -1,0 +1,733 @@
+--[[ 
+ d888b   .d8b.  db   d8b   db d8888b. 
+88' Y8b d8' `8b 88   I8I   88 88  `8D 
+88      88ooo88 88   I8I   88 88oobY' 
+88  ooo 88~~~88 Y8   I8I   88 88`8b   
+88. ~8~ 88   88 `8b d8'8b d8' 88 `88. 
+ Y888P  YP   YP  `8b8' `8d8'  88   YD 
+]]--
+
+-- !!!OPEN SOURCE DONT FORGET TO CREDIT ME!!!
+
+-- BETA
+
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+local Window = OrionLib:MakeWindow({
+    Name = "🍓🍉~~KawaiiHub By Gawr~~🍉🍓  ||  [BETA V1]",
+    HidePremium = false,
+    IntroText = "KawaiiHub",
+    SaveConfig = true,
+    ConfigFolder = "GawrScript"
+})
+
+-- Notification
+OrionLib:MakeNotification({
+    Name = "🍉Thanks!🍉",
+    Content = "💗💗Thanks for using the script!💗💗",
+    Image = "rbxassetid://4483345998",
+    Time = 5
+})
+
+-- Tabs
+local PlayerTab = Window:MakeTab({
+    Name = "🌸~Player~🌸",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local AimTab = Window:MakeTab({
+    Name = "🌸~Aim~🌸",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local SettingsTab = Window:MakeTab({
+    Name = "🌸~Settings~🌸",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local GamesTab = Window:MakeTab({
+    Name = "🌸~Games~🌸",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local CreditsTab = Window:MakeTab({
+    Name = "🌸~Credits~🌸",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Variables
+local autoClicking = false
+local flying = false
+local flySpeed = 50
+local jumpPower = 50
+local noClip = false
+local espEnabled = false
+local espColor = Color3.fromRGB(220, 150, 250)
+local clickTPEnabled = false
+local showHealthBar = false
+local aimLocking = false
+local targetPlayer = nil
+local aimLockKey = Enum.KeyCode.R
+local godModeEnabled = false
+local shadersEnabled = false
+local bloomEffect
+local lighting = game:GetService("Lighting")
+local isJumping = false
+
+-- Services
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Functions
+
+local isJumping = false
+
+function enableRainbowPlatformTrail(enabled)
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    if enabled then
+        UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if not gameProcessed and input.KeyCode == Enum.KeyCode.Space then
+                isJumping = true
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(input)
+            if input.KeyCode == Enum.KeyCode.Space then
+                isJumping = false
+            end
+        end)
+
+        RunService.RenderStepped:Connect(function()
+            if isJumping and enabled then
+                local rootPart = character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local block = Instance.new("Part")
+                    block.Size = Vector3.new(4, 0.5, 4) 
+                    block.Anchored = true
+                    block.CanCollide = true
+                    block.Material = Enum.Material.Neon
+                    block.Color = Color3.fromRGB(
+                        math.random(0, 255), 
+                        math.random(0, 255),
+                        math.random(0, 255)
+                    )
+                    block.Position = rootPart.Position - Vector3.new(0, 3, 0) 
+                    block.Parent = workspace
+
+                    game.Debris:AddItem(block, 5) 
+
+                    wait(0.1) 
+                end
+            end
+        end)
+    else
+        isJumping = false
+        print("Rainbow platform trail disabled.")
+    end
+end
+
+function enableBlossomShader(enabled)
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    if enabled then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then
+            print("HumanoidRootPart not found!")
+            return
+        end
+
+        if not rootPart:FindFirstChild("BlossomAttachment") then
+            local attachment = Instance.new("Attachment")
+            attachment.Name = "BlossomAttachment"
+            attachment.Parent = rootPart
+
+            local particleEmitter = Instance.new("ParticleEmitter")
+            particleEmitter.Name = "BlossomParticle"
+            particleEmitter.Texture = "rbxassetid://14437254534"
+            particleEmitter.Rate = 32
+            particleEmitter.Lifetime = NumberRange.new(5, 10)
+            particleEmitter.Speed = NumberRange.new(2, 5)
+            particleEmitter.VelocitySpread = 180
+            particleEmitter.Parent = attachment
+
+            print("Blossom particle effect enabled.")
+        else
+            print("Blossom particle attachment already exists.")
+        end
+    else
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            for _, attachment in pairs(rootPart:GetChildren()) do
+                if attachment:IsA("Attachment") and attachment:FindFirstChild("BlossomParticle") then
+                    attachment:Destroy()
+                    print("Blossom particle effect disabled.")
+                end
+            end
+        end
+    end
+end
+
+local function adjustLightingIntensity(value)
+    local lighting = game:GetService("Lighting")
+    
+    local defaultBrightness = 2
+    local defaultAmbient = Color3.fromRGB(255, 255, 255)
+
+    local brightness = defaultBrightness + (value / 50)
+    local ambientIntensity = 255 - (value * 2)
+
+    brightness = math.clamp(brightness, 0, 10)
+    ambientIntensity = math.clamp(ambientIntensity, 0, 255)
+
+    lighting.Brightness = brightness
+    lighting.Ambient = Color3.fromRGB(ambientIntensity, ambientIntensity, ambientIntensity)
+
+    print("Lighting Intensity: Brightness = " .. brightness .. ", Ambient = " .. ambientIntensity)
+end
+
+
+-- Function for cancer shaders
+local function toggleShaders(enabled)
+    if enabled then
+        shadersEnabled = true
+
+        if not lighting:FindFirstChild("ShaderBloom") then
+            bloomEffect = Instance.new("BloomEffect")
+            bloomEffect.Name = "ShaderBloom"
+            bloomEffect.Intensity = 1.5
+            bloomEffect.Threshold = 0.2
+            bloomEffect.Size = 24
+            bloomEffect.Parent = lighting
+        end
+
+        if not lighting:FindFirstChild("ShaderColorCorrection") then
+            local colorCorrection = Instance.new("ColorCorrectionEffect")
+            colorCorrection.Name = "ShaderColorCorrection"
+            colorCorrection.Brightness = 0.1
+            colorCorrection.Contrast = 0.2
+            colorCorrection.Saturation = 0.2
+            colorCorrection.TintColor = Color3.fromRGB(255, 224, 189)
+            colorCorrection.Parent = lighting
+        end
+
+        if not lighting:FindFirstChild("ShaderDepthOfField") then
+            local depthOfField = Instance.new("DepthOfFieldEffect")
+            depthOfField.Name = "ShaderDepthOfField"
+            depthOfField.FarIntensity = 0.1
+            depthOfField.FocusDistance = 20
+            depthOfField.InFocusRadius = 30
+            depthOfField.NearIntensity = 0.75
+            depthOfField.Parent = lighting
+        end
+
+        print("Shaders enabled.")
+    else
+        shadersEnabled = false
+
+        if lighting:FindFirstChild("ShaderBloom") then
+            lighting:FindFirstChild("ShaderBloom"):Destroy()
+        end
+        if lighting:FindFirstChild("ShaderColorCorrection") then
+            lighting:FindFirstChild("ShaderColorCorrection"):Destroy()
+        end
+        if lighting:FindFirstChild("ShaderDepthOfField") then
+            lighting:FindFirstChild("ShaderDepthOfField"):Destroy()
+        end
+
+        print("Shaders disabled.")
+    end
+end
+
+--godmode
+local function setGodMode(enabled)
+    local player = game.Players.LocalPlayer
+
+    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+
+        if enabled then
+            godModeEnabled = true
+
+            humanoid.MaxHealth = math.huge
+            humanoid.Health = math.huge
+
+            humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+                if godModeEnabled then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+
+            print("GodMode enabled.")
+        else
+            godModeEnabled = false
+
+            humanoid.MaxHealth = 100
+            if humanoid.Health > humanoid.MaxHealth then
+                humanoid.Health = humanoid.MaxHealth
+            end
+
+            print("GodMode disabled.")
+        end
+    end
+end
+
+local function getClosestTarget()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = otherPlayer.Character.HumanoidRootPart
+            local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(rootPart.Position)
+
+            if onScreen then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = otherPlayer
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- aim lock :3
+local function lockAim()
+    local player = game.Players.LocalPlayer
+    local camera = workspace.CurrentCamera
+
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPart = targetPlayer.Character.HumanoidRootPart
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
+    end
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if aimLocking then
+        lockAim()
+    end
+end)
+
+local function startAutoClick()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+
+    wait(3)
+
+    while autoClicking do
+        mouse1click()
+        wait(0.1)
+    end
+end
+
+local function toggleFly()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+
+    if flying then
+        flying = false
+        humanoidRootPart:FindFirstChild("BodyVelocity"):Destroy()
+        humanoidRootPart:FindFirstChild("BodyGyro"):Destroy()
+        character.Humanoid.PlatformStand = false
+        print("Fly mode deactivated.")
+    else
+        flying = true
+        character.Humanoid.PlatformStand = true
+
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
+        bodyVelocity.Parent = humanoidRootPart
+
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
+        bodyGyro.P = 3000
+        bodyGyro.CFrame = humanoidRootPart.CFrame
+        bodyGyro.Parent = humanoidRootPart
+
+        print("Fly mode activated.")
+
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if flying then
+                local camera = workspace.CurrentCamera
+                local moveDirection = Vector3.new(0, 0, 0)
+
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+                    moveDirection = moveDirection + (camera.CFrame.LookVector * flySpeed)
+                end
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+                    moveDirection = moveDirection - (camera.CFrame.LookVector * flySpeed)
+                end
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+                    moveDirection = moveDirection - (camera.CFrame.RightVector * flySpeed)
+                end
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+                    moveDirection = moveDirection + (camera.CFrame.RightVector * flySpeed)
+                end
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                    moveDirection = moveDirection + Vector3.new(0, flySpeed, 0)
+                end
+                if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+                    moveDirection = moveDirection - Vector3.new(0, flySpeed, 0)
+                end
+
+                bodyVelocity.Velocity = moveDirection
+                bodyGyro.CFrame = camera.CFrame
+            end
+        end)
+    end
+end
+
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == flyHotkey then
+        toggleFly()
+    end
+end)
+
+local function toggleNoClip()
+    noClip = not noClip
+    local player = game.Players.LocalPlayer
+
+    game:GetService("RunService").Stepped:Connect(function()
+        if noClip and player and player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+
+    if noClip then
+        print("No Clip enabled.")
+    else
+        print("No Clip disabled.")
+    end
+end
+
+local function createHealthBar(player)
+    local character = player.Character
+    if character and character:FindFirstChild("Head") then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Adornee = character.Head
+            billboard.Size = UDim2.new(0, 100, 0, 10)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.Parent = character.Head
+
+            local healthBar = Instance.new("Frame")
+            healthBar.Size = UDim2.new(humanoid.Health / humanoid.MaxHealth, 0, 1, 0)
+            healthBar.BackgroundColor3 = Color3.new(1, 0, 0)
+            healthBar.Parent = billboard
+
+            local function updateHealth()
+                healthBar.Size = UDim2.new(humanoid.Health / humanoid.MaxHealth, 0, 1, 0)
+            end
+
+            humanoid.HealthChanged:Connect(updateHealth)
+        end
+    end
+end
+
+local function enableESP()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") then
+                local billboard = Instance.new("BillboardGui")
+                billboard.Adornee = char.Head
+                billboard.Size = UDim2.new(0, 150, 0, 50)
+                billboard.StudsOffset = Vector3.new(0, 3, 0)
+                billboard.Parent = char.Head
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = espColor
+                textLabel.TextStrokeTransparency = 0.8
+                textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                textLabel.TextScaled = true
+                textLabel.Text = player.Name .. "\nDistance: " .. math.floor((char.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) .. " studs"
+                textLabel.Parent = billboard
+
+                if showHealthBar then
+                    createHealthBar(player)
+                end
+            end
+        end
+    end
+end
+
+local function disableESP()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("Head") then
+                local billboard = char.Head:FindFirstChildOfClass("BillboardGui")
+                if billboard then
+                    billboard:Destroy()
+                end
+            end
+        end
+    end
+end
+
+local function enableClickTP()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+
+    mouse.Button1Down:Connect(function()
+        if clickTPEnabled then
+            local targetPos = mouse.Hit.p
+            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+            end
+        end
+    end)
+end
+
+enableClickTP()
+
+-- Toggles/Slider and whateverrr
+PlayerTab:AddToggle({
+    Name = "🌸AutoClicker🍓",
+    Default = false,
+    Callback = function(value)
+        autoClicking = value
+        if autoClicking then
+            startAutoClick()
+        end
+    end
+})
+
+PlayerTab:AddBind({
+	Name = "✨Fly💫",
+	Default = Enum.KeyCode.E,
+	Hold = false,
+	Callback = function()
+		toggleFly()
+	end    
+})
+
+PlayerTab:AddToggle({
+	Name = "🌸No Clip🌸",
+	Default = false,
+	Callback = function()
+		toggleNoClip()
+	end    
+})
+
+PlayerTab:AddSlider({
+    Name = "🍓Walk Speed🍉",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Color = Color3.fromRGB(255, 105, 180),
+    Increment = 1,
+    ValueName = "WalkSpeed",
+    Callback = function(value)
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = value
+        end
+    end
+})
+
+PlayerTab:AddSlider({
+    Name = "✨Jump Power🌠",
+    Min = 50,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 0, 255),
+    Increment = 10,
+    ValueName = "JumpPower",
+    Callback = function(value)
+        jumpPower = value
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = jumpPower
+    end
+})
+
+PlayerTab:AddSlider({
+    Name = "💫Fly Speed💫",
+    Min = 10,
+    Max = 200,
+    Default = 50,
+    Color = Color3.fromRGB(255, 105, 180),
+    Increment = 5,
+    ValueName = "FlySpeed",
+    Callback = function(value)
+        flySpeed = value
+    end
+})
+
+PlayerTab:AddToggle({
+    Name = "🌸Click Teleport🌸",
+    Default = false,
+    Callback = function(value)
+        clickTPEnabled = value
+    end
+})
+
+PlayerTab:AddToggle({
+    Name = "🥝GodMode🥝",
+    Default = false,
+    Callback = function(value)
+        setGodMode(value)
+    end    
+})
+
+AimTab:AddToggle({
+    Name = "🍓ESP🍓",
+    Default = false,
+    Callback = function(value)
+        espEnabled = value
+        if espEnabled then
+            enableESP()
+        else
+            disableESP()
+        end
+    end
+})
+
+AimTab:AddColorpicker({
+    Name = "🍇ESP Color🍇",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color)
+        espColor = color
+        if espEnabled then
+            disableESP()
+            enableESP()
+        end
+    end
+})
+
+AimTab:AddToggle({
+    Name = "🌸Show Health Bar in ESP🌸",
+    Default = false,
+    Callback = function(value)
+        showHealthBar = value
+        if espEnabled then
+            disableESP()
+            enableESP()
+        end
+    end
+})
+
+AimTab:AddBind({
+    Name = "🍒AimLock Bind🍒",
+    Default = aimLockKey,
+    Hold = false,
+    Callback = function()
+        if not aimLocking then
+            aimLocking = true
+            targetPlayer = getClosestTarget()
+        else
+            aimLocking = false
+            targetPlayer = nil
+        end
+    end
+})
+
+SettingsTab:AddToggle({
+    Name = "🍇Shaders🍇",
+    Default = false,
+    Callback = function(value)
+        toggleShaders(value) 
+    end    
+})
+
+SettingsTab:AddSlider({
+    Name = "🌸Bloom Intensity🌸",
+    Min = 0,
+    Max = 10,
+    Default = 1.5,  
+    Color = Color3.fromRGB(255, 105, 180), 
+    Increment = 0.1,
+    ValueName = "BloomIntensity",
+    Callback = function(value)
+        if bloomEffect then
+            bloomEffect.Intensity = value 
+        end
+    end    
+})
+
+SettingsTab:AddSlider({
+    Name = "💫Light✨",
+    Min = -100,
+    Max = 100,
+    Default = -17,
+    Color = Color3.fromRGB(255, 0, 255),
+    Increment = 1,
+    ValueName = "Intensity",
+    Callback = function(value)
+        adjustLightingIntensity(value)  
+    end    
+})
+
+SettingsTab:AddToggle({
+    Name = "🌸Blossom Shader🌸",
+    Default = false,
+    Callback = function(value)
+        enableBlossomShader(value)
+    end    
+})
+
+SettingsTab:AddToggle({
+    Name = "🌈 Rainbow Platform Trail 🌈",
+    Default = false,
+    Callback = function(value)
+        enableRainbowPlatformTrail(value)
+    end    
+})
+
+GamesTab:AddButton({
+	Name = "💗🌸Hello Kitty Cafe Script🌸💗",
+	Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/FieryWolfLevi/roblox-scripts/refs/heads/main/HelloKittyGui.lua"))()
+  	end    
+})
+
+GamesTab:AddParagraph("Latest Script Key For Build A Boat🍒", "N-161803   DM Me If It Needs To Be Updated🍉")
+
+GamesTab:AddButton({
+	Name = "💗🌸Build A Boat BEST Script🌸💗",
+	Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/novakoolhub/Scripts/main/Scripts/NovBoatR1"))()
+  	end    
+})
+
+GamesTab:AddButton({
+	Name = "💗🌸Ninja Legends Script🌸💗",
+	Callback = function()
+        pcall(loadstring(game:HttpGet("https://pastebin.com/raw/RjLQKZxZ")))
+  	end    
+})
+
+GamesTab:AddButton({
+	Name = "💗🌸BIG Paintball BEST Script🌸💗",
+	Callback = function()
+        pcall(loadstring(game:HttpGet("https://cdn.julman.fr/scripts/34.lua")))
+  	end    
+})
+
+CreditsTab:AddParagraph("Credits", "Made by Gawr!🍉")
+CreditsTab:AddParagraph("Open Source", "Don't Forget To Credit Me When You Use My Code!💗")
+CreditsTab:AddParagraph("BETA Note", "Features in BETA testing phase.✨")
+
+OrionLib:Init()
